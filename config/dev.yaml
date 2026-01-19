@@ -1,0 +1,52 @@
+app:
+  name: "netschool-proxy"
+  version: "1.0.0"
+  debug: true
+
+server:
+  port: "8080"
+  read_timeout: "10s"
+  write_timeout: "10s"
+  idle_timeout: "30s"
+  cors:
+    allowed_origins:
+      - "*"
+    allowed_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    allowed_headers:
+      - "Origin"
+      - "Content-Type"
+      - "Accept"
+      - "Authorization"
+
+database:
+  host: "localhost"
+  port: 5432
+  name: "netschool_proxy"
+  user: "proxy_user"
+  password: "dev_password"
+  sslmode: "disable"
+
+cache:
+  type: "memory"
+  redis_addr: "localhost:6379"
+  ttl: 300
+  memory_size: 1000
+
+netschool:
+  mode: "ns-webapi"
+  timeout: "30s"
+  retry_max: 3
+  retry_wait: "1s"
+
+jwt:
+  secret: "very_secure_secret_key_that_should_be_changed_in_production"
+  expires_in: "24h"
+
+logging:
+  level: "debug"
+  file: "logs/app.log"
