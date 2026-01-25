@@ -5,7 +5,7 @@
 echo "=== Проверка состояния QuantumDiary сервера ==="
 
 # Проверяем, запущен ли сервер
-if pgrep -f "server_final" > /dev/null; then
+if pgrep -f "server" > /dev/null; then
     echo "✓ Сервер запущен"
     
     # Проверяем работоспособность
