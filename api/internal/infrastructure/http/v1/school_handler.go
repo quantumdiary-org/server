@@ -4,12 +4,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"netschool-proxy/api/api/internal/domain/student"
 )
 
-type SchoolHandler struct{}
+type SchoolHandler struct {
+	studentService *student.Service
+}
 
-func NewSchoolHandler() *SchoolHandler {
-	return &SchoolHandler{}
+func NewSchoolHandler(studentService *student.Service) *SchoolHandler {
+	return &SchoolHandler{
+		studentService: studentService,
+	}
 }
 
 type SchoolInfo struct {
@@ -32,79 +37,75 @@ type ClassInfo struct {
 	Students int    `json:"students_count"`
 }
 
-// GetSchoolInfo возвращает информацию о школе
-// @Summary Get school information
-// @Description Retrieves detailed information about the school
-// @Tags school
-// @Security BearerAuth
-// @Produce json
-// @Success 200 {object} SchoolInfo
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /school/info [get]
+
+
+
+
+
+
+
+
+
+
 func (h *SchoolHandler) GetSchoolInfo(c *gin.Context) {
-	// Получаем userID из токена (через middleware)
-	_, exists := c.Get("userID")
+	
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// В реальной реализации здесь будет вызов к NetSchool API
-	// для получения информации о школе
-	// Пока возвращаем заглушку
-	schoolInfo := SchoolInfo{
-		ID:           1,
-		Name:         "Школа №1 города N",
-		Address:      "ул. Ленина, д. 1",
-		Phone:        "+7 (XXX) XXX-XX-XX",
-		Email:        "school1@example.com",
-		Principal:    "Иванов Иван Иванович",
-		FoundationYear: 1980,
-		Website:      "https://school1.example.com",
+	instanceURL := c.Query("instance_url")
+	if instanceURL == "" {
+		instanceURL = c.GetHeader("X-Instance-URL")
+		if instanceURL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "instance_url is required"})
+			return
+		}
+	}
+
+	
+	schoolInfo, err := h.studentService.GetSchoolInfo(c.Request.Context(), userID.(string), instanceURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, schoolInfo)
 }
 
-// GetClasses возвращает список классов
-// @Summary Get classes list
-// @Description Retrieves list of classes in the school
-// @Tags school
-// @Security BearerAuth
-// @Produce json
-// @Success 200 {array} ClassInfo
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /school/classes [get]
+
+
+
+
+
+
+
+
+
+
 func (h *SchoolHandler) GetClasses(c *gin.Context) {
-	// Получаем userID из токена (через middleware)
-	_, exists := c.Get("userID")
+	
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// В реальной реализации здесь будет вызов к NetSchool API
-	// для получения списка классов
-	// Пока возвращаем заглушку
-	classes := []ClassInfo{
-		{
-			ID:       "class_1",
-			Name:     "1А",
-			Grade:    1,
-			Letter:   "А",
-			Teacher:  "Петрова Мария Сергеевна",
-			Students: 25,
-		},
-		{
-			ID:       "class_2",
-			Name:     "9Б",
-			Grade:    9,
-			Letter:   "Б",
-			Teacher:  "Сидоров Алексей Петрович",
-			Students: 22,
-		},
+	instanceURL := c.Query("instance_url")
+	if instanceURL == "" {
+		instanceURL = c.GetHeader("X-Instance-URL")
+		if instanceURL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "instance_url is required"})
+			return
+		}
+	}
+
+	
+	classes, err := h.studentService.GetClasses(c.Request.Context(), userID.(string), instanceURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, classes)

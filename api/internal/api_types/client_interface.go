@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// APIClientInterface определяет общий интерфейс для всех типов API
+
 type APIClientInterface interface {
-	// Общие методы для аутентификации
+	
 	Login(ctx context.Context, username, password string, schoolID int, instanceURL string, loginData map[string]interface{}) (string, error)
 	GetLoginData(ctx context.Context, instanceURL string) (map[string]interface{}, error)
 
-	// Методы для получения данных
+	
 	GetStudentInfo(ctx context.Context, userID, instanceURL string) (interface{}, error)
 	GetGrades(ctx context.Context, userID, studentID, instanceURL string) (interface{}, error)
 	GetSchedule(ctx context.Context, userID, instanceURL string, weekStart time.Time) (interface{}, error)
@@ -28,15 +28,15 @@ type APIClientInterface interface {
 	GetGradesForSubject(ctx context.Context, userID, studentID, subjectID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error)
 	GetFullJournal(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error)
 
-	// Методы для проверки состояния
+	
 	CheckHealth(ctx context.Context, instanceURL string) (bool, error)
 	CheckIntPing(ctx context.Context, instanceURL string) (bool, time.Duration, error)
 }
 
-// APIClientFactory создает экземпляр клиента API в зависимости от режима
+
 type APIClientFactory struct{}
 
-// NewAPIClient создает новый клиент API в зависимости от режима
+
 func (f *APIClientFactory) NewAPIClient(mode APIMode, config APIConfig) (APIClientInterface, error) {
 	switch mode {
 	case NSWebAPI:
@@ -50,9 +50,9 @@ func (f *APIClientFactory) NewAPIClient(mode APIMode, config APIConfig) (APIClie
 	}
 }
 
-// createNSWebAPIClient создает клиент для веб-версии NetSchool
+
 func (f *APIClientFactory) createNSWebAPIClient(config APIConfig) (APIClientInterface, error) {
-	// Используем существующий NetSchool клиент
+	
 	client := &NSWebAPIClient{
 		timeout:    time.Duration(config.Timeout) * time.Second,
 		retryMax:   config.RetryMax,
@@ -61,7 +61,7 @@ func (f *APIClientFactory) createNSWebAPIClient(config APIConfig) (APIClientInte
 	return client, nil
 }
 
-// createNSMobileAPIClient создает клиент для мобильной версии NetSchool
+
 func (f *APIClientFactory) createNSMobileAPIClient(config APIConfig) (APIClientInterface, error) {
 	client := &NSMobileAPIClient{
 		timeout:    time.Duration(config.Timeout) * time.Second,
@@ -71,7 +71,7 @@ func (f *APIClientFactory) createNSMobileAPIClient(config APIConfig) (APIClientI
 	return client, nil
 }
 
-// createDevMockAPIClient создает клиент для тестирования с фейковыми данными
+
 func (f *APIClientFactory) createDevMockAPIClient(config APIConfig) (APIClientInterface, error) {
 	client := &DevMockAPIClient{
 		Timeout:    time.Duration(config.Timeout) * time.Second,

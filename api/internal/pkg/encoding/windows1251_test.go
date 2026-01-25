@@ -24,7 +24,7 @@ func TestEncodeDecodeEnglishText(t *testing.T) {
 	
 	encoded, err := encoding.EncodeWindows1251(originalText)
 	assert.NoError(t, err)
-	assert.Equal(t, originalText, encoded) // For ASCII characters, encoding should be the same
+	assert.Equal(t, originalText, encoded) 
 	
 	decoded, err := encoding.DecodeWindows1251(encoded)
 	assert.NoError(t, err)

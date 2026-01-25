@@ -34,12 +34,12 @@ func NewService(sessionRepo SessionRepository, apiClientFactory *api_types.APICl
 }
 
 func (s *Service) Login(ctx context.Context, username, password string, schoolID int, instanceURL string) (string, error) {
-	// Используем конфигурацию по умолчанию
+	
 	return s.LoginWithAPIType(ctx, username, password, schoolID, instanceURL, string(s.config.Mode))
 }
 
 func (s *Service) LoginWithAPIType(ctx context.Context, username, password string, schoolID int, instanceURL string, apiType string) (string, error) {
-	// 1. Создаем клиент API соответствующего типа
+	
 	apiMode := api_types.APIMode(apiType)
 	clientConfig := s.config
 	clientConfig.Mode = apiMode
@@ -49,33 +49,33 @@ func (s *Service) LoginWithAPIType(ctx context.Context, username, password strin
 		return "", fmt.Errorf("failed to create API client: %w", err)
 	}
 
-	// 2. Получаем loginData от API
+	
 	loginData, err := apiClient.GetLoginData(ctx, instanceURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to get login data from API: %w", err)
 	}
 
-	// 3. Выполняем аутентификацию через API
+	
 	accessToken, err := apiClient.Login(ctx, username, password, schoolID, instanceURL, loginData)
 	if err != nil {
 		return "", fmt.Errorf("failed to authenticate with API: %w", err)
 	}
 
-	// 4. Генерируем уникальный ID пользователя (например, на основе логина и школы)
+	
 	userID := fmt.Sprintf("%s_%d_%s", username, schoolID, apiType)
 
-	// 5. Получаем дополнительную информацию о пользователе из API
-	// Попробуем получить информацию о пользователе для извлечения studentID
+	
+	
 	var studentID string
 	var yearID string
 
-	// Получаем информацию о пользователе
+	
 	userInfo, err := apiClient.GetInfo(ctx, accessToken, instanceURL)
 	if err != nil {
-		// Если не удается получить информацию, используем дефолтные значения
+		
 		studentID = fmt.Sprintf("user_%s_%d", username, schoolID)
 	} else {
-		// Извлекаем studentID из информации о пользователе
+		
 		if userInfoMap, ok := userInfo.(map[string]interface{}); ok {
 			if id, exists := userInfoMap["id"]; exists {
 				studentID = fmt.Sprintf("%v", id)
@@ -87,14 +87,14 @@ func (s *Service) LoginWithAPIType(ctx context.Context, username, password strin
 		}
 	}
 
-	// Получаем информацию о контексте для извлечения года
-	// Используем GetSchoolInfo для получения информации о школе и году
+	
+	
 	schoolInfo, err := apiClient.GetSchoolInfo(ctx, accessToken, instanceURL)
 	if err != nil {
-		// Если не удается получить информацию о школе, используем дефолтное значение
+		
 		yearID = "current_year"
 	} else {
-		// Извлекаем год из информации о школе
+		
 		if schoolInfoMap, ok := schoolInfo.(map[string]interface{}); ok {
 			if year, exists := schoolInfoMap["yearId"]; exists {
 				yearID = fmt.Sprintf("%v", year)
@@ -108,17 +108,17 @@ func (s *Service) LoginWithAPIType(ctx context.Context, username, password strin
 		}
 	}
 
-	// 6. Сохраняем сессию в базе данных (с токеном Сетевого Города)
+	
 	session := &NetSchoolSession{
 		UserID:               userID,
-		NetSchoolAccessToken: accessToken, // Токен Сетевого Города хранится только в БД
-		RefreshToken:         "", // В реальной системе может быть refresh token
-		ExpiresAt:            time.Now().Add(24 * time.Hour), // Используем фиксированный срок действия
-		NetSchoolURL:         instanceURL,                     // Используем переданный URL
+		NetSchoolAccessToken: accessToken, 
+		RefreshToken:         "", 
+		ExpiresAt:            time.Now().Add(24 * time.Hour), 
+		NetSchoolURL:         instanceURL,                     
 		SchoolID:             schoolID,
 		StudentID:            studentID,
 		YearID:               yearID,
-		APIType:              apiType,                         // Сохраняем тип API
+		APIType:              apiType,                         
 		CreatedAt:            time.Now(),
 		UpdatedAt:            time.Now(),
 	}
@@ -127,7 +127,7 @@ func (s *Service) LoginWithAPIType(ctx context.Context, username, password strin
 		return "", fmt.Errorf("failed to save session: %w", err)
 	}
 
-	// 7. Генерируем JWT токен для клиента (токен прокси, не токен Сетевого Города)
+	
 	proxyToken, err := s.jwtService.GenerateToken(userID, fmt.Sprintf("%d", session.ID), schoolID)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate proxy token: %w", err)
@@ -142,15 +142,15 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (*security.Cl
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
-	// Проверяем, что сессия все еще действительна в базе данных
+	
 	session, err := s.sessionRepo.GetByUserID(ctx, claims.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("session not found: %w", err)
 	}
 
-	// Проверяем, что сессия не истекла
+	
 	if session.ExpiresAt.Before(time.Now()) {
-		// Удаляем просроченную сессию
+		
 		s.sessionRepo.Delete(ctx, claims.UserID)
 		return nil, errors.New("session expired")
 	}
@@ -158,22 +158,22 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (*security.Cl
 	return claims, nil
 }
 
-// ValidateTokenWithSession валидирует токен и возвращает сессию
+
 func (s *Service) ValidateTokenWithSession(ctx context.Context, token string) (*security.Claims, *NetSchoolSession, error) {
 	claims, err := s.jwtService.ParseToken(token)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid token: %w", err)
 	}
 
-	// Проверяем, что сессия все еще действительна в базе данных
+	
 	session, err := s.sessionRepo.GetByUserID(ctx, claims.UserID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("session not found: %w", err)
 	}
 
-	// Проверяем, что сессия не истекла
+	
 	if session.ExpiresAt.Before(time.Now()) {
-		// Удаляем просроченную сессию
+		
 		s.sessionRepo.Delete(ctx, claims.UserID)
 		return nil, nil, errors.New("session expired")
 	}

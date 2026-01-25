@@ -44,14 +44,14 @@ func TestJWTService_InvalidToken(t *testing.T) {
 	token, err := jwtService1.GenerateToken(userID, sessionID, schoolID)
 	assert.NoError(t, err)
 	
-	// Try to parse with different secret
+	
 	_, err = jwtService2.ParseToken(token)
 	assert.Error(t, err)
 }
 
 func TestJWTService_ExpiredToken(t *testing.T) {
 	secret := "test_secret"
-	expiresIn := 1 * time.Millisecond // Very short expiration
+	expiresIn := 1 * time.Millisecond 
 	
 	jwtService := security.NewJWTService(secret, expiresIn)
 	
@@ -62,7 +62,7 @@ func TestJWTService_ExpiredToken(t *testing.T) {
 	token, err := jwtService.GenerateToken(userID, sessionID, schoolID)
 	assert.NoError(t, err)
 	
-	// Wait for token to expire
+	
 	time.Sleep(10 * time.Millisecond)
 	
 	_, err = jwtService.ParseToken(token)

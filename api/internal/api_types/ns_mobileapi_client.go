@@ -12,19 +12,19 @@ import (
 	"time"
 )
 
-// NSMobileAPIClient реализует API для мобильной версии NetSchool
-// Использует OAuth 2.0 с device flow как в XDnevnik
+
+
 type NSMobileAPIClient struct {
 	timeout   time.Duration
 	retryMax  int
 	retryWait time.Duration
 }
 
-// Login реализует аутентификацию для мобильного API с использованием OAuth 2.0 device flow
+
 func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string, schoolID int, instanceURL string, loginData map[string]interface{}) (string, error) {
 	client := &http.Client{Timeout: c.timeout}
 
-	// 1. Получаем device code
+	
 	deviceCodeURL := fmt.Sprintf("%s/connect/deviceauthorization", instanceURL)
 
 	deviceCodeData := url.Values{}
@@ -66,17 +66,17 @@ func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string
 		return "", fmt.Errorf("failed to parse device code response: %w", err)
 	}
 
-	// 2. Используем device code для получения токена
+	
 	tokenURL := fmt.Sprintf("%s/connect/token", instanceURL)
 
-	// Опрашиваем токен с интервалом
+	
 	maxAttempts := deviceCodeResp.ExpiresIn / deviceCodeResp.Interval
 	if maxAttempts == 0 {
-		maxAttempts = 100 // максимальное количество попыток по умолчанию
+		maxAttempts = 100 
 	}
 	interval := time.Duration(deviceCodeResp.Interval) * time.Second
 	if interval == 0 {
-		interval = 5 * time.Second // интервал по умолчанию
+		interval = 5 * time.Second 
 	}
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
@@ -110,7 +110,7 @@ func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string
 			}
 
 			if tokenResp.StatusCode == http.StatusOK {
-				// Успешно получили токен
+				
 				var tokenResult struct {
 					AccessToken  string `json:"access_token"`
 					TokenType    string `json:"token_type"`
@@ -124,7 +124,7 @@ func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string
 
 				return tokenResult.AccessToken, nil
 			} else if tokenResp.StatusCode == http.StatusBadRequest {
-				// Проверяем тип ошибки
+				
 				var errorResult struct {
 					Error            string `json:"error"`
 					ErrorDescription string `json:"error_description"`
@@ -135,10 +135,10 @@ func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string
 				}
 
 				if errorResult.Error == "authorization_pending" {
-					// Продолжаем ожидание
+					
 					continue
 				} else if errorResult.Error == "slow_down" {
-					// Увеличиваем интервал
+					
 					interval += 5 * time.Second
 					continue
 				} else if errorResult.Error == "expired_token" {
@@ -155,9 +155,9 @@ func (c *NSMobileAPIClient) Login(ctx context.Context, username, password string
 	return "", fmt.Errorf("max attempts exceeded for token polling")
 }
 
-// GetLoginData получает данные для аутентификации
+
 func (c *NSMobileAPIClient) GetLoginData(ctx context.Context, instanceURL string) (map[string]interface{}, error) {
-	// Для мобильного API возвращаем информацию, необходимую для OAuth аутентификации
+	
 	loginData := map[string]interface{}{
 		"auth_method": "oauth_device_flow",
 		"client_id":   "parent-mobile",
@@ -168,7 +168,7 @@ func (c *NSMobileAPIClient) GetLoginData(ctx context.Context, instanceURL string
 	return loginData, nil
 }
 
-// GetStudentInfo возвращает информацию о студенте
+
 func (c *NSMobileAPIClient) GetStudentInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -203,7 +203,7 @@ func (c *NSMobileAPIClient) GetStudentInfo(ctx context.Context, userID, instance
 	return result, nil
 }
 
-// GetGrades возвращает оценки
+
 func (c *NSMobileAPIClient) GetGrades(ctx context.Context, userID, studentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -212,7 +212,7 @@ func (c *NSMobileAPIClient) GetGrades(ctx context.Context, userID, studentID, in
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	req.URL.RawQuery = q.Encode()
@@ -243,7 +243,7 @@ func (c *NSMobileAPIClient) GetGrades(ctx context.Context, userID, studentID, in
 	return result, nil
 }
 
-// GetSchedule возвращает расписание
+
 func (c *NSMobileAPIClient) GetSchedule(ctx context.Context, userID, instanceURL string, weekStart time.Time) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -252,7 +252,7 @@ func (c *NSMobileAPIClient) GetSchedule(ctx context.Context, userID, instanceURL
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры даты
+	
 	q := req.URL.Query()
 	q.Set("weekStart", weekStart.Format("2006-01-02"))
 	q.Set("weekEnd", weekStart.AddDate(0, 0, 6).Format("2006-01-02"))
@@ -284,7 +284,7 @@ func (c *NSMobileAPIClient) GetSchedule(ctx context.Context, userID, instanceURL
 	return result, nil
 }
 
-// GetSchoolInfo возвращает информацию о школе
+
 func (c *NSMobileAPIClient) GetSchoolInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -319,7 +319,7 @@ func (c *NSMobileAPIClient) GetSchoolInfo(ctx context.Context, userID, instanceU
 	return result, nil
 }
 
-// GetClasses возвращает список классов
+
 func (c *NSMobileAPIClient) GetClasses(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -354,7 +354,7 @@ func (c *NSMobileAPIClient) GetClasses(ctx context.Context, userID, instanceURL 
 	return result, nil
 }
 
-// GetDiary возвращает дневник
+
 func (c *NSMobileAPIClient) GetDiary(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -363,7 +363,7 @@ func (c *NSMobileAPIClient) GetDiary(ctx context.Context, userID, studentID, ins
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры даты
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("startDate", start.Format("2006-01-02"))
@@ -396,7 +396,7 @@ func (c *NSMobileAPIClient) GetDiary(ctx context.Context, userID, studentID, ins
 	return result, nil
 }
 
-// GetAssignment возвращает информацию о задании
+
 func (c *NSMobileAPIClient) GetAssignment(ctx context.Context, userID, studentID, assignmentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -405,7 +405,7 @@ func (c *NSMobileAPIClient) GetAssignment(ctx context.Context, userID, studentID
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	req.URL.RawQuery = q.Encode()
@@ -436,7 +436,7 @@ func (c *NSMobileAPIClient) GetAssignment(ctx context.Context, userID, studentID
 	return result, nil
 }
 
-// GetAssignmentTypes возвращает типы заданий
+
 func (c *NSMobileAPIClient) GetAssignmentTypes(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -471,7 +471,7 @@ func (c *NSMobileAPIClient) GetAssignmentTypes(ctx context.Context, userID, inst
 	return result, nil
 }
 
-// GetDownloadFile возвращает файл из дневника
+
 func (c *NSMobileAPIClient) GetDownloadFile(ctx context.Context, userID, studentID, assignmentID, fileID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -480,7 +480,7 @@ func (c *NSMobileAPIClient) GetDownloadFile(ctx context.Context, userID, student
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("assignmentId", assignmentID)
@@ -508,14 +508,14 @@ func (c *NSMobileAPIClient) GetDownloadFile(ctx context.Context, userID, student
 	return body, nil
 }
 
-// GetReportFile возвращает отчеты
+
 func (c *NSMobileAPIClient) GetReportFile(ctx context.Context, userID, instanceURL, reportURL string, filters map[string]interface{}, yearID int, timeout int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
-	// Подготавливаем URL для отчета
+	
 	fullURL := fmt.Sprintf("%s/%s", instanceURL, reportURL)
 
-	// Подготавливаем тело запроса
+	
 	requestBody, err := json.Marshal(filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal filters: %w", err)
@@ -553,7 +553,7 @@ func (c *NSMobileAPIClient) GetReportFile(ctx context.Context, userID, instanceU
 	return result, nil
 }
 
-// GetJournal возвращает отчет об успеваемости и посещаемости
+
 func (c *NSMobileAPIClient) GetJournal(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -562,7 +562,7 @@ func (c *NSMobileAPIClient) GetJournal(ctx context.Context, userID, studentID, i
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("startDate", start.Format("2006-01-02"))
@@ -600,7 +600,7 @@ func (c *NSMobileAPIClient) GetJournal(ctx context.Context, userID, studentID, i
 	return result, nil
 }
 
-// GetInfo возвращает информацию о пользователе
+
 func (c *NSMobileAPIClient) GetInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -635,7 +635,7 @@ func (c *NSMobileAPIClient) GetInfo(ctx context.Context, userID, instanceURL str
 	return result, nil
 }
 
-// GetPhoto возвращает фото пользователя
+
 func (c *NSMobileAPIClient) GetPhoto(ctx context.Context, userID, studentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -644,7 +644,7 @@ func (c *NSMobileAPIClient) GetPhoto(ctx context.Context, userID, studentID, ins
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	req.URL.RawQuery = q.Encode()
@@ -671,7 +671,7 @@ func (c *NSMobileAPIClient) GetPhoto(ctx context.Context, userID, studentID, ins
 	return body, nil
 }
 
-// GetGradesForSubject возвращает оценки по конкретному предмету за определенный период
+
 func (c *NSMobileAPIClient) GetGradesForSubject(ctx context.Context, userID, studentID, subjectID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -680,7 +680,7 @@ func (c *NSMobileAPIClient) GetGradesForSubject(ctx context.Context, userID, stu
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("subjectId", subjectID)
@@ -719,7 +719,7 @@ func (c *NSMobileAPIClient) GetGradesForSubject(ctx context.Context, userID, stu
 	return result, nil
 }
 
-// GetFullJournal возвращает полный журнал успеваемости за определенный период
+
 func (c *NSMobileAPIClient) GetFullJournal(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -728,7 +728,7 @@ func (c *NSMobileAPIClient) GetFullJournal(ctx context.Context, userID, studentI
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("startDate", start.Format("2006-01-02"))
@@ -766,7 +766,7 @@ func (c *NSMobileAPIClient) GetFullJournal(ctx context.Context, userID, studentI
 	return result, nil
 }
 
-// CheckHealth проверяет работоспособность
+
 func (c *NSMobileAPIClient) CheckHealth(ctx context.Context, instanceURL string) (bool, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -784,7 +784,7 @@ func (c *NSMobileAPIClient) CheckHealth(ctx context.Context, instanceURL string)
 	return resp.StatusCode == http.StatusOK, nil
 }
 
-// CheckIntPing проверяет внутреннее состояние
+
 func (c *NSMobileAPIClient) CheckIntPing(ctx context.Context, instanceURL string) (bool, time.Duration, error) {
 	client := &http.Client{Timeout: c.timeout}
 

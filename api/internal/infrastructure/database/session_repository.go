@@ -17,20 +17,20 @@ func NewSessionRepository(db *gorm.DB) *SessionRepository {
 }
 
 func (r *SessionRepository) Create(ctx context.Context, session *auth.NetSchoolSession) error {
-	// Check if session already exists
+	
 	var existingSession auth.NetSchoolSession
 	result := r.db.Where("user_id = ?", session.UserID).First(&existingSession)
 
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			// Record doesn't exist, create new one
+			
 			return r.db.WithContext(ctx).Create(session).Error
 		}
 		return result.Error
 	}
 
-	// Record exists, update it
-	session.ID = existingSession.ID // Preserve the ID
+	
+	session.ID = existingSession.ID 
 	return r.db.WithContext(ctx).Save(session).Error
 }
 

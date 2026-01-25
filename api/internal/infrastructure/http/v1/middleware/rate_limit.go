@@ -9,7 +9,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiter implements a rate limiting mechanism
+
 type RateLimiter struct {
 	limits map[string]*rate.Limiter
 	mutex  sync.RWMutex
@@ -17,7 +17,7 @@ type RateLimiter struct {
 	burst  int
 }
 
-// NewRateLimiter creates a new rate limiter
+
 func NewRateLimiter(requestsPerSecond float64, burst int) *RateLimiter {
 	return &RateLimiter{
 		limits: make(map[string]*rate.Limiter),
@@ -26,7 +26,7 @@ func NewRateLimiter(requestsPerSecond float64, burst int) *RateLimiter {
 	}
 }
 
-// GetLimiter retrieves or creates a rate limiter for a specific key
+
 func (rl *RateLimiter) GetLimiter(key string) *rate.Limiter {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
@@ -40,10 +40,10 @@ func (rl *RateLimiter) GetLimiter(key string) *rate.Limiter {
 	return limiter
 }
 
-// RateLimitMiddleware applies rate limiting to requests
+
 func (rl *RateLimiter) RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Use IP address as the key for rate limiting
+		
 		ip := c.ClientIP()
 		limiter := rl.GetLimiter(ip)
 
@@ -60,7 +60,7 @@ func (rl *RateLimiter) RateLimitMiddleware() gin.HandlerFunc {
 	}
 }
 
-// RateLimitMiddlewareWithKey allows custom key for rate limiting
+
 func (rl *RateLimiter) RateLimitMiddlewareWithKey(keyFunc func(*gin.Context) string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := keyFunc(c)
@@ -88,7 +88,7 @@ func (rl *RateLimiter) RateLimitMiddlewareWithKey(keyFunc func(*gin.Context) str
 	}
 }
 
-// TokenBucketRateLimiter implements a token bucket rate limiting algorithm
+
 type TokenBucketRateLimiter struct {
 	capacity  int
 	refillRate time.Duration
@@ -96,7 +96,7 @@ type TokenBucketRateLimiter struct {
 	mutex     sync.RWMutex
 }
 
-// TokenBucket represents a token bucket for a specific key
+
 type TokenBucket struct {
 	tokens    int
 	lastRefill time.Time
@@ -104,7 +104,7 @@ type TokenBucket struct {
 	refillRate time.Duration
 }
 
-// NewTokenBucket creates a new token bucket
+
 func NewTokenBucket(capacity int, refillRate time.Duration) *TokenBucket {
 	return &TokenBucket{
 		tokens:     capacity,
@@ -114,7 +114,7 @@ func NewTokenBucket(capacity int, refillRate time.Duration) *TokenBucket {
 	}
 }
 
-// NewTokenBucketRateLimiter creates a new token bucket rate limiter
+
 func NewTokenBucketRateLimiter(capacity int, refillRate time.Duration) *TokenBucketRateLimiter {
 	return &TokenBucketRateLimiter{
 		capacity:  capacity,
@@ -123,7 +123,7 @@ func NewTokenBucketRateLimiter(capacity int, refillRate time.Duration) *TokenBuc
 	}
 }
 
-// Allow checks if a request is allowed based on token bucket algorithm
+
 func (tb *TokenBucketRateLimiter) Allow(key string) bool {
 	tb.mutex.Lock()
 	defer tb.mutex.Unlock()
@@ -137,7 +137,7 @@ func (tb *TokenBucketRateLimiter) Allow(key string) bool {
 	return bucket.consume(1)
 }
 
-// consume consumes tokens from the bucket
+
 func (tb *TokenBucket) consume(tokens int) bool {
 	tb.refill()
 	
@@ -149,13 +149,13 @@ func (tb *TokenBucket) consume(tokens int) bool {
 	return false
 }
 
-// refill refills the bucket based on elapsed time
+
 func (tb *TokenBucket) refill() {
 	now := time.Now()
 	elapsed := now.Sub(tb.lastRefill)
 	
 	if elapsed >= tb.refillRate {
-		// Calculate how many tokens to add based on elapsed time
+		
 		tokensToAdd := int(elapsed / tb.refillRate)
 		tb.tokens = min(tb.capacity, tb.tokens+tokensToAdd)
 		tb.lastRefill = now
@@ -169,7 +169,7 @@ func min(a, b int) int {
 	return b
 }
 
-// TokenBucketRateLimitMiddleware applies token bucket rate limiting
+
 func (tb *TokenBucketRateLimiter) TokenBucketRateLimitMiddleware(keyFunc func(*gin.Context) string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := keyFunc(c)

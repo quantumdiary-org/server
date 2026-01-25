@@ -1,6 +1,6 @@
 package grade
 
-// Grade represents a student's grade
+
 type Grade struct {
 	ID          string `json:"id"`
 	StudentID   string `json:"student_id"`
@@ -12,7 +12,7 @@ type Grade struct {
 	Weight      int    `json:"weight"`
 }
 
-// GradeService defines the interface for grade-related operations
+
 type GradeService interface {
 	GetGradesForStudent(studentID string) ([]*Grade, error)
 	GetGradesForSubject(studentID, subjectID string) ([]*Grade, error)

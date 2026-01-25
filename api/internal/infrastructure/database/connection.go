@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// DBType represents the type of database
+
 type DBType string
 
 const (
@@ -19,12 +19,12 @@ const (
 	SQLite     DBType = "sqlite"
 )
 
-// ConnectionManager manages connections to different database types
+
 type ConnectionManager struct {
 	config DatabaseConfig
 }
 
-// DatabaseConfig holds configuration for database connections
+
 type DatabaseConfig struct {
 	Type     string
 	Host     string
@@ -37,12 +37,12 @@ type DatabaseConfig struct {
 	SQLitePath string
 }
 
-// NewConnectionManager creates a new connection manager
+
 func NewConnectionManager(config DatabaseConfig) *ConnectionManager {
 	return &ConnectionManager{config: config}
 }
 
-// Connect creates a connection to the database based on the configured type
+
 func (cm *ConnectionManager) Connect() (*gorm.DB, error) {
 	dbType := DBType(cm.config.Type)
 
@@ -58,7 +58,7 @@ func (cm *ConnectionManager) Connect() (*gorm.DB, error) {
 	}
 }
 
-// connectPostgreSQL creates a connection to PostgreSQL
+
 func (cm *ConnectionManager) connectPostgreSQL() (*gorm.DB, error) {
 	var dsn string
 	if cm.config.URL != "" {
@@ -72,7 +72,7 @@ func (cm *ConnectionManager) connectPostgreSQL() (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
-// connectMariaDB creates a connection to MariaDB/MySQL
+
 func (cm *ConnectionManager) connectMariaDB() (*gorm.DB, error) {
 	var dsn string
 	if cm.config.URL != "" {
@@ -85,7 +85,7 @@ func (cm *ConnectionManager) connectMariaDB() (*gorm.DB, error) {
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
 }
 
-// connectSQLite creates a connection to SQLite
+
 func (cm *ConnectionManager) connectSQLite() (*gorm.DB, error) {
 	return gorm.Open(sqlite.Open(cm.config.SQLitePath), &gorm.Config{})
 }

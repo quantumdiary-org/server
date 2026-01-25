@@ -17,16 +17,16 @@ import (
 	"golang.org/x/text/transform"
 )
 
-// NSWebAPIClient реализует API для веб-версии NetSchool
+
 type NSWebAPIClient struct {
 	timeout   time.Duration
 	retryMax  int
 	retryWait time.Duration
 }
 
-// Login реализует аутентификацию
+
 func (c *NSWebAPIClient) Login(ctx context.Context, username, password string, schoolID int, instanceURL string, loginData map[string]interface{}) (string, error) {
-	// Шаг 1: Получаем NSSESSIONID cookie (путем доступа к logindata)
+	
 	client := &http.Client{Timeout: c.timeout}
 	
 	_, err := client.Get(fmt.Sprintf("%s/webapi/logindata", instanceURL))
@@ -34,22 +34,22 @@ func (c *NSWebAPIClient) Login(ctx context.Context, username, password string, s
 		return "", fmt.Errorf("failed to get logindata cookies: %w", err)
 	}
 
-	// Шаг 2: Получаем параметры аутентификации
+	
 	loginMeta := make(map[string]interface{})
 	for k, v := range loginData {
 		loginMeta[k] = v
 	}
 
-	// Извлекаем соль
+	
 	salt, ok := loginMeta["salt"].(string)
 	if !ok {
 		return "", fmt.Errorf("salt not found in login data")
 	}
 
-	// Удаляем соль из loginMeta
+	
 	delete(loginMeta, "salt")
 
-	// Шаг 3: Кодируем пароль точно так же, как в рабочем коде
+	
 	encoder := charmap.Windows1251.NewEncoder()
 	win1251Pass, _, err := transform.String(encoder, password)
 	if err != nil {
@@ -61,21 +61,21 @@ func (c *NSWebAPIClient) Login(ctx context.Context, username, password string, s
 	pw2 := hex.EncodeToString(pw2Hash[:])
 	pw := pw2[:len(password)]
 
-	// Шаг 4: Подготовляем данные для входа точно так же, как в рабочем коде
+	
 	loginDataFinal := map[string]string{
-		"loginType": "1", // Числовое значение 1 - КРИТИЧЕСКОЕ ОТКРЫТИЕ
-		"scid":      strconv.Itoa(schoolID), // ID школы - КРИТИЧЕСКОЕ (5091 для МАОУ СОШ № 102)
+		"loginType": "1", 
+		"scid":      strconv.Itoa(schoolID), 
 		"un":        username,
 		"pw":        pw,
 		"pw2":       pw2,
 	}
 
-	// Добавляем остальные параметры из loginMeta
+	
 	for k, v := range loginMeta {
 		loginDataFinal[k] = fmt.Sprintf("%v", v)
 	}
 
-	// Шаг 5: Выполняем вход с данными формы
+	
 	formData := url.Values{}
 	for k, v := range loginDataFinal {
 		formData.Set(k, v)
@@ -105,7 +105,7 @@ func (c *NSWebAPIClient) Login(ctx context.Context, username, password string, s
 		return "", fmt.Errorf("failed to parse login response: %w", err)
 	}
 
-	// Шаг 6: Проверяем результат аутентификации
+	
 	at, exists := authResult["at"]
 	if !exists {
 		message, msgExists := authResult["message"]
@@ -123,7 +123,7 @@ func (c *NSWebAPIClient) Login(ctx context.Context, username, password string, s
 	return accessToken, nil
 }
 
-// GetLoginData получает данные для аутентификации
+
 func (c *NSWebAPIClient) GetLoginData(ctx context.Context, instanceURL string) (map[string]interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 	
@@ -151,7 +151,7 @@ func (c *NSWebAPIClient) GetLoginData(ctx context.Context, instanceURL string) (
 	return result, nil
 }
 
-// GetStudentInfo возвращает информацию о студенте
+
 func (c *NSWebAPIClient) GetStudentInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 	
@@ -160,8 +160,8 @@ func (c *NSWebAPIClient) GetStudentInfo(ctx context.Context, userID, instanceURL
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем токен доступа в заголовок
-	req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+	
+	req.Header.Set("at", userID) 
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 	resp, err := client.Do(req)
@@ -183,7 +183,7 @@ func (c *NSWebAPIClient) GetStudentInfo(ctx context.Context, userID, instanceURL
 	return result, nil
 }
 
-// GetGrades возвращает оценки
+
 func (c *NSWebAPIClient) GetGrades(ctx context.Context, userID, studentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 	
@@ -192,8 +192,8 @@ func (c *NSWebAPIClient) GetGrades(ctx context.Context, userID, studentID, insta
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем токен доступа в заголовок
-	req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+	
+	req.Header.Set("at", userID) 
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 	resp, err := client.Do(req)
@@ -215,11 +215,11 @@ func (c *NSWebAPIClient) GetGrades(ctx context.Context, userID, studentID, insta
 	return result, nil
 }
 
-// GetSchedule возвращает расписание
+
 func (c *NSWebAPIClient) GetSchedule(ctx context.Context, userID, instanceURL string, weekStart time.Time) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 	
-	// Получаем текущий год
+	
 	yearResp, err := c.getCurrentYear(ctx, userID, instanceURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current year: %w", err)
@@ -230,7 +230,7 @@ func (c *NSWebAPIClient) GetSchedule(ctx context.Context, userID, instanceURL st
 		return nil, fmt.Errorf("failed to get year ID")
 	}
 
-	// Форматируем дату недели
+	
 	weekFormatted := weekStart.Format("2006-01-02")
 	
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/webapi/student/%s/schedule", instanceURL, userID), nil)
@@ -238,14 +238,14 @@ func (c *NSWebAPIClient) GetSchedule(ctx context.Context, userID, instanceURL st
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("yearId", yearID)
 	q.Set("week", weekFormatted)
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
-	req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+	
+	req.Header.Set("at", userID) 
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 	resp, err := client.Do(req)
@@ -267,7 +267,7 @@ func (c *NSWebAPIClient) GetSchedule(ctx context.Context, userID, instanceURL st
 	return result, nil
 }
 
-// GetSchoolInfo возвращает информацию о школе
+
 func (c *NSWebAPIClient) GetSchoolInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 	
@@ -280,30 +280,30 @@ func (c *NSWebAPIClient) GetSchoolInfo(ctx context.Context, userID, instanceURL 
 	for _, endpoint := range endpoints {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/webapi/%s", instanceURL, endpoint), nil)
 		if err != nil {
-			continue // Пробуем следующий эндпоинт
+			continue 
 		}
 
-		// Добавляем токен доступа в заголовок
-		req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+		
+		req.Header.Set("at", userID) 
 		req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 		resp, err := client.Do(req)
 		if err != nil {
-			continue // Пробуем следующий эндпоинт
+			continue 
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			continue // Пробуем следующий эндпоинт
+			continue 
 		}
 
 		var result map[string]interface{}
 		if err := json.Unmarshal(body, &result); err != nil {
-			continue // Пробуем следующий эндпоинт
+			continue 
 		}
 
-		// Проверяем, что ответ не пустой и не содержит ошибки
+		
 		if len(result) > 0 {
 			return result, nil
 		}
@@ -312,7 +312,7 @@ func (c *NSWebAPIClient) GetSchoolInfo(ctx context.Context, userID, instanceURL 
 	return nil, fmt.Errorf("failed to get school info from any endpoint")
 }
 
-// GetClasses возвращает список классов
+
 func (c *NSWebAPIClient) GetClasses(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -321,8 +321,8 @@ func (c *NSWebAPIClient) GetClasses(ctx context.Context, userID, instanceURL str
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем токен доступа в заголовок
-	req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+	
+	req.Header.Set("at", userID) 
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 	resp, err := client.Do(req)
@@ -344,13 +344,13 @@ func (c *NSWebAPIClient) GetClasses(ctx context.Context, userID, instanceURL str
 	return result, nil
 }
 
-// CheckHealth проверяет работоспособность
+
 func (c *NSWebAPIClient) CheckHealth(ctx context.Context, instanceURL string) (bool, error) {
 	_, err := c.GetLoginData(ctx, instanceURL)
 	return err == nil, err
 }
 
-// CheckIntPing проверяет внутреннее состояние
+
 func (c *NSWebAPIClient) CheckIntPing(ctx context.Context, instanceURL string) (bool, time.Duration, error) {
 	start := time.Now()
 	ok, err := c.CheckHealth(ctx, instanceURL)
@@ -358,11 +358,11 @@ func (c *NSWebAPIClient) CheckIntPing(ctx context.Context, instanceURL string) (
 	return ok, duration, err
 }
 
-// GetDiary возвращает дневник
+
 func (c *NSWebAPIClient) GetDiary(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
-	// Получаем текущий год
+	
 	yearResp, err := c.getCurrentYear(ctx, userID, instanceURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current year: %w", err)
@@ -378,7 +378,7 @@ func (c *NSWebAPIClient) GetDiary(ctx context.Context, userID, studentID, instan
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("yearId", yearID)
 	q.Set("studentId", studentID)
@@ -386,7 +386,7 @@ func (c *NSWebAPIClient) GetDiary(ctx context.Context, userID, studentID, instan
 	q.Set("weekStart", start.Format("2006-01-02"))
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -409,7 +409,7 @@ func (c *NSWebAPIClient) GetDiary(ctx context.Context, userID, studentID, instan
 	return result, nil
 }
 
-// GetAssignment возвращает информацию о задании
+
 func (c *NSWebAPIClient) GetAssignment(ctx context.Context, userID, studentID, assignmentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -418,12 +418,12 @@ func (c *NSWebAPIClient) GetAssignment(ctx context.Context, userID, studentID, a
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -446,7 +446,7 @@ func (c *NSWebAPIClient) GetAssignment(ctx context.Context, userID, studentID, a
 	return result, nil
 }
 
-// GetAssignmentTypes возвращает типы заданий
+
 func (c *NSWebAPIClient) GetAssignmentTypes(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -455,12 +455,12 @@ func (c *NSWebAPIClient) GetAssignmentTypes(ctx context.Context, userID, instanc
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("all", "false")
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -483,7 +483,7 @@ func (c *NSWebAPIClient) GetAssignmentTypes(ctx context.Context, userID, instanc
 	return result, nil
 }
 
-// GetDownloadFile возвращает файл из дневника
+
 func (c *NSWebAPIClient) GetDownloadFile(ctx context.Context, userID, studentID, assignmentID, fileID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -492,13 +492,13 @@ func (c *NSWebAPIClient) GetDownloadFile(ctx context.Context, userID, studentID,
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	q.Set("assignId", assignmentID)
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -513,37 +513,37 @@ func (c *NSWebAPIClient) GetDownloadFile(ctx context.Context, userID, studentID,
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Return the file content as byte slice
+	
 	return body, nil
 }
 
-// GetReportFile возвращает отчеты
+
 func (c *NSWebAPIClient) GetReportFile(ctx context.Context, userID, instanceURL, reportURL string, filters map[string]interface{}, yearID int, timeout int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
-	// First, submit the report request
+	
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/webapi/%s", instanceURL, reportURL), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Prepare filter data
+	
 	filterData := make(map[string]interface{})
 	for k, v := range filters {
 		filterData[k] = v
 	}
 
-	// Add year ID if provided
+	
 	if yearID > 0 {
 		filterData["yearId"] = yearID
 	}
 
-	// Add transport if provided
+	
 	if transport != nil {
 		filterData["transport"] = *transport
 	}
 
-	// Convert to JSON
+	
 	jsonData, err := json.Marshal(filterData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal filter data: %w", err)
@@ -573,7 +573,7 @@ func (c *NSWebAPIClient) GetReportFile(ctx context.Context, userID, instanceURL,
 	return result, nil
 }
 
-// GetJournal возвращает отчет об успеваемости и посещаемости
+
 func (c *NSWebAPIClient) GetJournal(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -582,7 +582,7 @@ func (c *NSWebAPIClient) GetJournal(ctx context.Context, userID, studentID, inst
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("SID", studentID)
 	q.Set("PCLID_IUP", fmt.Sprintf("%d", classID))
@@ -593,7 +593,7 @@ func (c *NSWebAPIClient) GetJournal(ctx context.Context, userID, studentID, inst
 	}
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -616,7 +616,7 @@ func (c *NSWebAPIClient) GetJournal(ctx context.Context, userID, studentID, inst
 	return result, nil
 }
 
-// GetInfo возвращает информацию о пользователе
+
 func (c *NSWebAPIClient) GetInfo(ctx context.Context, userID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -625,7 +625,7 @@ func (c *NSWebAPIClient) GetInfo(ctx context.Context, userID, instanceURL string
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -648,7 +648,7 @@ func (c *NSWebAPIClient) GetInfo(ctx context.Context, userID, instanceURL string
 	return result, nil
 }
 
-// GetPhoto возвращает фото пользователя
+
 func (c *NSWebAPIClient) GetPhoto(ctx context.Context, userID, studentID, instanceURL string) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -657,12 +657,12 @@ func (c *NSWebAPIClient) GetPhoto(ctx context.Context, userID, studentID, instan
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("studentId", studentID)
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -677,11 +677,11 @@ func (c *NSWebAPIClient) GetPhoto(ctx context.Context, userID, studentID, instan
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Return the image content as byte slice
+	
 	return body, nil
 }
 
-// GetGradesForSubject возвращает оценки по конкретному предмету за определенный период
+
 func (c *NSWebAPIClient) GetGradesForSubject(ctx context.Context, userID, studentID, subjectID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -690,7 +690,7 @@ func (c *NSWebAPIClient) GetGradesForSubject(ctx context.Context, userID, studen
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем параметры запроса
+	
 	q := req.URL.Query()
 	q.Set("subjectId", subjectID)
 	q.Set("period", fmt.Sprintf("%s - %s", start.Format("2006-01-02"), end.Format("2006-01-02")))
@@ -701,7 +701,7 @@ func (c *NSWebAPIClient) GetGradesForSubject(ctx context.Context, userID, studen
 	}
 	req.URL.RawQuery = q.Encode()
 
-	// Добавляем токен доступа в заголовок
+	
 	req.Header.Set("at", userID)
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
@@ -724,17 +724,17 @@ func (c *NSWebAPIClient) GetGradesForSubject(ctx context.Context, userID, studen
 	return result, nil
 }
 
-// GetFullJournal возвращает полный журнал успеваемости за определенный период
+
 func (c *NSWebAPIClient) GetFullJournal(ctx context.Context, userID, studentID, instanceURL string, start, end time.Time, termID, classID int, transport *int) (interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
-	// Используем отчетный механизм для получения полного журнала
+	
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/webapi/reports/studenttotal", instanceURL), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Подготавливаем параметры отчета
+	
 	reportData := map[string]interface{}{
 		"SID":         studentID,
 		"PCLID_IUP":   classID,
@@ -772,7 +772,7 @@ func (c *NSWebAPIClient) GetFullJournal(ctx context.Context, userID, studentID, 
 	return result, nil
 }
 
-// Вспомогательный метод для получения текущего года
+
 func (c *NSWebAPIClient) getCurrentYear(ctx context.Context, userID, instanceURL string) (map[string]interface{}, error) {
 	client := &http.Client{Timeout: c.timeout}
 
@@ -781,8 +781,8 @@ func (c *NSWebAPIClient) getCurrentYear(ctx context.Context, userID, instanceURL
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Добавляем токен доступа в заголовок
-	req.Header.Set("at", userID) // Предполагаем, что userID - это токен доступа
+	
+	req.Header.Set("at", userID) 
 	req.Header.Set("User-Agent", "NetCityApp/1.0")
 
 	resp, err := client.Do(req)

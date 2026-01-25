@@ -25,20 +25,20 @@ func (r *CacheRepository) Set(ctx context.Context, key string, value string, ttl
 		UpdatedAt: time.Now(),
 	}
 
-	// Проверяем, существует ли уже запись с таким ключом
+	
 	var existingEntry cache.CacheEntry
 	result := r.db.Where("key = ?", key).First(&existingEntry)
 
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			// Запись не существует, создаем новую
+			
 			return r.db.WithContext(ctx).Create(entry).Error
 		}
 		return result.Error
 	}
 
-	// Запись существует, обновляем её
-	entry.ID = existingEntry.ID // Сохраняем ID
+	
+	entry.ID = existingEntry.ID 
 	return r.db.WithContext(ctx).Save(entry).Error
 }
 

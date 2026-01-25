@@ -1,6 +1,6 @@
 package student
 
-// Student represents a student in the system
+
 type Student struct {
 	ID        string `json:"id"`
 	FirstName string `json:"first_name"`
@@ -11,7 +11,7 @@ type Student struct {
 	SchoolID  int    `json:"school_id"`
 }
 
-// StudentService defines the interface for student-related operations
+
 type StudentService interface {
 	GetStudentInfo(studentID string) (*Student, error)
 	GetStudentsByClass(classID string) ([]*Student, error)

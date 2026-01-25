@@ -28,41 +28,41 @@ func NewClient(baseURL string, timeout time.Duration) *Client {
 		baseURL:    baseURL,
 		httpClient: &http.Client{Timeout: timeout},
 		timeout:    timeout,
-		retryMax:   3, // default retry count
-		retryWait:  time.Second, // default retry wait
+		retryMax:   3, 
+		retryWait:  time.Second, 
 	}
 }
 
 func (c *Client) Login(ctx context.Context, username, password string, schoolID int, loginData map[string]interface{}) (string, error) {
-	// 1. Получаем куки через GET /logindata
+	
 	_, err := c.httpClient.Get(fmt.Sprintf("%s/webapi/logindata", c.baseURL))
 	if err != nil {
 		return "", fmt.Errorf("failed to get login data cookies: %w", err)
 	}
 
-	// 2. Хешируем пароль с использованием windows-1251
+	
 	salt := loginData["salt"].(string)
 	pw, pw2, err := hashPassword(password, salt)
 	if err != nil {
 		return "", fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// 3. Формируем данные для логина
+	
 	formData := url.Values{}
-	formData.Add("loginType", "1") // Критически важно!
+	formData.Add("loginType", "1") 
 	formData.Add("scid", fmt.Sprintf("%d", schoolID))
 	formData.Add("un", username)
 	formData.Add("pw", pw)
 	formData.Add("pw2", pw2)
 
-	// Добавляем остальные параметры из loginData
+	
 	for key, value := range loginData {
 		if key != "salt" {
 			formData.Add(key, fmt.Sprintf("%v", value))
 		}
 	}
 
-	// 4. Отправляем POST запрос
+	
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		fmt.Sprintf("%s/webapi/login", c.baseURL),
 		bytes.NewBufferString(formData.Encode()))
@@ -101,17 +101,17 @@ func (c *Client) Login(ctx context.Context, username, password string, schoolID 
 }
 
 func hashPassword(password, salt string) (string, string, error) {
-	// Конвертируем пароль в windows-1251
+	
 	win1251Pass, err := encoding.EncodeWindows1251(password)
 	if err != nil {
 		return "", "", err
 	}
 
-	// Первое хеширование MD5
+	
 	md5Hash := md5.Sum([]byte(win1251Pass))
 	pw2 := hex.EncodeToString(md5Hash[:])
 
-	// Второе хеширование с солью
+	
 	saltedInput := salt + pw2
 	finalHash := md5.Sum([]byte(saltedInput))
 	pw := hex.EncodeToString(finalHash[:])[:len(password)]
@@ -119,7 +119,7 @@ func hashPassword(password, salt string) (string, string, error) {
 	return pw, pw2, nil
 }
 
-// GetLoginData получает информацию для логина
+
 func (c *Client) GetLoginData(ctx context.Context) (map[string]interface{}, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/webapi/logindata", c.baseURL), nil)
 	if err != nil {
@@ -149,14 +149,14 @@ func (c *Client) GetLoginData(ctx context.Context) (map[string]interface{}, erro
 	return result, nil
 }
 
-// WithRetrySettings устанавливает параметры повторных попыток
+
 func (c *Client) WithRetrySettings(maxRetries int, waitTime time.Duration) *Client {
 	c.retryMax = maxRetries
 	c.retryWait = waitTime
 	return c
 }
 
-// DoRequestWithRetry выполняет HTTP-запрос с повторными попытками
+
 func (c *Client) DoRequestWithRetry(ctx context.Context, req *http.Request) (*http.Response, error) {
 	var resp *http.Response
 	var err error
@@ -171,12 +171,12 @@ func (c *Client) DoRequestWithRetry(ctx context.Context, req *http.Request) (*ht
 			resp.Body.Close()
 		}
 
-		// Если это последняя попытка, возвращаем ошибку
+		
 		if i == c.retryMax {
 			break
 		}
 
-		// Ждем перед следующей попыткой
+		
 		select {
 		case <-time.After(c.retryWait):
 		case <-ctx.Done():

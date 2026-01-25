@@ -1,31 +1,30 @@
 package transformer
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
 
-// UnifiedTransformer handles data transformation between different API formats and Go structs
+
 type UnifiedTransformer struct{}
 
-// NewUnifiedTransformer creates a new instance of UnifiedTransformer
+
 func NewUnifiedTransformer() *UnifiedTransformer {
 	return &UnifiedTransformer{}
 }
 
-// TransformStudentInfo transforms student information from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformStudentInfo(apiData interface{}) (map[string]interface{}, error) {
-	// Convert interface{} to map[string]interface{}
+	
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("invalid data format for student info")
 	}
 
-	// Standardize the data structure
+	
 	transformed := make(map[string]interface{})
 	
-	// Map common fields regardless of source
+	
 	fieldMappings := map[string]string{
 		"id":         "id",
 		"student_id": "id",
@@ -57,13 +56,13 @@ func (t *UnifiedTransformer) TransformStudentInfo(apiData interface{}) (map[stri
 		}
 	}
 
-	// Add timestamp
+	
 	transformed["created_at"] = time.Now().UTC()
 
 	return transformed, nil
 }
 
-// TransformDiary transforms diary data from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformDiary(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -72,7 +71,7 @@ func (t *UnifiedTransformer) TransformDiary(apiData interface{}) (map[string]int
 
 	transformed := make(map[string]interface{})
 	
-	// Copy basic fields with standardization
+	
 	basicFields := []string{"termName", "term_name", "className", "class_name", "weekStart", "week_start", "weekEnd", "week_end"}
 	for _, field := range basicFields {
 		if value, exists := data[field]; exists {
@@ -81,7 +80,7 @@ func (t *UnifiedTransformer) TransformDiary(apiData interface{}) (map[string]int
 		}
 	}
 
-	// Transform weekDays if present
+	
 	if weekDays, exists := data["weekDays"]; exists {
 		if days, ok := weekDays.([]interface{}); ok {
 			transformedDays := make([]interface{}, len(days))
@@ -95,7 +94,7 @@ func (t *UnifiedTransformer) TransformDiary(apiData interface{}) (map[string]int
 			transformed["week_days"] = transformedDays
 		}
 	} else if weekDays, exists := data["week_days"]; exists {
-		// Already in standard format
+		
 		transformed["week_days"] = weekDays
 	}
 
@@ -103,18 +102,18 @@ func (t *UnifiedTransformer) TransformDiary(apiData interface{}) (map[string]int
 	return transformed, nil
 }
 
-// transformDay transforms a single day from various API formats
+
 func (t *UnifiedTransformer) transformDay(dayData map[string]interface{}) map[string]interface{} {
 	transformed := make(map[string]interface{})
 	
-	// Standardize date field
+	
 	if dateVal, exists := dayData["date"]; exists {
 		transformed["date"] = dateVal
 	} else if dateVal, exists := dayData["dt"]; exists {
 		transformed["date"] = dateVal
 	}
 
-	// Transform lessons if present
+	
 	if lessons, exists := dayData["lessons"]; exists {
 		if lessonList, ok := lessons.([]interface{}); ok {
 			transformedLessons := make([]interface{}, len(lessonList))
@@ -132,11 +131,11 @@ func (t *UnifiedTransformer) transformDay(dayData map[string]interface{}) map[st
 	return transformed
 }
 
-// transformLesson transforms a single lesson from various API formats
+
 func (t *UnifiedTransformer) transformLesson(lessonData map[string]interface{}) map[string]interface{} {
 	transformed := make(map[string]interface{})
 	
-	// Standardize lesson fields
+	
 	fieldMappings := map[string]string{
 		"id":          "id",
 		"lessonId":    "id",
@@ -176,11 +175,11 @@ func (t *UnifiedTransformer) transformLesson(lessonData map[string]interface{}) 
 	return transformed
 }
 
-// transformAssignment transforms a single assignment from various API formats
+
 func (t *UnifiedTransformer) transformAssignment(assignmentData map[string]interface{}) map[string]interface{} {
 	transformed := make(map[string]interface{})
 	
-	// Standardize assignment fields
+	
 	fieldMappings := map[string]string{
 		"id":          "id",
 		"assignmentId": "id",
@@ -221,10 +220,10 @@ func (t *UnifiedTransformer) transformAssignment(assignmentData map[string]inter
 	return transformed
 }
 
-// TransformGrades transforms grades data from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformGrades(apiData interface{}) (map[string]interface{}, error) {
-	// For now, just return the data with standardization
-	// In a real implementation, this would parse the HTML and extract structured data
+	
+	
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("invalid data format for grades")
@@ -232,7 +231,7 @@ func (t *UnifiedTransformer) TransformGrades(apiData interface{}) (map[string]in
 
 	transformed := make(map[string]interface{})
 	
-	// Copy and standardize fields
+	
 	for k, v := range data {
 		transformed[standardizeFieldName(k)] = v
 	}
@@ -241,7 +240,7 @@ func (t *UnifiedTransformer) TransformGrades(apiData interface{}) (map[string]in
 	return transformed, nil
 }
 
-// TransformSchedule transforms schedule data from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformSchedule(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -250,12 +249,12 @@ func (t *UnifiedTransformer) TransformSchedule(apiData interface{}) (map[string]
 
 	transformed := make(map[string]interface{})
 	
-	// Standardize schedule fields
+	
 	for k, v := range data {
 		transformed[standardizeFieldName(k)] = v
 	}
 
-	// Transform days if present
+	
 	if days, exists := data["days"]; exists {
 		if dayList, ok := days.([]interface{}); ok {
 			transformedDays := make([]interface{}, len(dayList))
@@ -274,7 +273,7 @@ func (t *UnifiedTransformer) TransformSchedule(apiData interface{}) (map[string]
 	return transformed, nil
 }
 
-// TransformAssignmentTypes transforms assignment types from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformAssignmentTypes(apiData interface{}) ([]map[string]interface{}, error) {
 	types, ok := apiData.([]interface{})
 	if !ok {
@@ -286,7 +285,7 @@ func (t *UnifiedTransformer) TransformAssignmentTypes(apiData interface{}) ([]ma
 		if itemMap, ok := item.(map[string]interface{}); ok {
 			transformed[i] = make(map[string]interface{})
 			
-			// Standardize fields
+			
 			fieldMappings := map[string]string{
 				"id":       "id",
 				"typeId":   "id",
@@ -312,7 +311,7 @@ func (t *UnifiedTransformer) TransformAssignmentTypes(apiData interface{}) ([]ma
 	return transformed, nil
 }
 
-// TransformSchoolInfo transforms school information from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformSchoolInfo(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -321,7 +320,7 @@ func (t *UnifiedTransformer) TransformSchoolInfo(apiData interface{}) (map[strin
 
 	transformed := make(map[string]interface{})
 	
-	// Standardize school fields
+	
 	fieldMappings := map[string]string{
 		"id":             "id",
 		"schoolId":       "id",
@@ -356,7 +355,7 @@ func (t *UnifiedTransformer) TransformSchoolInfo(apiData interface{}) (map[strin
 	return transformed, nil
 }
 
-// TransformContext transforms context information from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformContext(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -365,7 +364,7 @@ func (t *UnifiedTransformer) TransformContext(apiData interface{}) (map[string]i
 
 	transformed := make(map[string]interface{})
 	
-	// Copy and standardize fields
+	
 	for k, v := range data {
 		transformed[standardizeFieldName(k)] = v
 	}
@@ -374,10 +373,10 @@ func (t *UnifiedTransformer) TransformContext(apiData interface{}) (map[string]i
 	return transformed, nil
 }
 
-// TransformJournal transforms journal data from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformJournal(apiData interface{}) (map[string]interface{}, error) {
-	// For now, just return the data with standardization
-	// In a real implementation, this would parse the HTML and extract structured data
+	
+	
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("invalid data format for journal")
@@ -385,7 +384,7 @@ func (t *UnifiedTransformer) TransformJournal(apiData interface{}) (map[string]i
 
 	transformed := make(map[string]interface{})
 	
-	// Copy and standardize fields
+	
 	for k, v := range data {
 		transformed[standardizeFieldName(k)] = v
 	}
@@ -394,7 +393,7 @@ func (t *UnifiedTransformer) TransformJournal(apiData interface{}) (map[string]i
 	return transformed, nil
 }
 
-// TransformInfo transforms user info from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformInfo(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -403,7 +402,7 @@ func (t *UnifiedTransformer) TransformInfo(apiData interface{}) (map[string]inte
 
 	transformed := make(map[string]interface{})
 	
-	// Standardize user info fields
+	
 	fieldMappings := map[string]string{
 		"email":        "email",
 		"mobilePhone":  "phone",
@@ -435,7 +434,7 @@ func (t *UnifiedTransformer) TransformInfo(apiData interface{}) (map[string]inte
 	return transformed, nil
 }
 
-// TransformAssignmentInfo transforms assignment info from various API formats to standardized Go struct
+
 func (t *UnifiedTransformer) TransformAssignmentInfo(apiData interface{}) (map[string]interface{}, error) {
 	data, ok := apiData.(map[string]interface{})
 	if !ok {
@@ -444,7 +443,7 @@ func (t *UnifiedTransformer) TransformAssignmentInfo(apiData interface{}) (map[s
 
 	transformed := make(map[string]interface{})
 	
-	// Standardize assignment info fields
+	
 	fieldMappings := map[string]string{
 		"id":          "id",
 		"assignmentId": "id",
@@ -474,22 +473,22 @@ func (t *UnifiedTransformer) TransformAssignmentInfo(apiData interface{}) (map[s
 	return transformed, nil
 }
 
-// ParseDate parses date string from various API formats to time.Time
+
 func (t *UnifiedTransformer) ParseDate(dateStr string) (time.Time, error) {
-	// Try different date formats commonly used by various APIs
+	
 	formats := []string{
-		"2006-01-02T15:04:05.000Z", // ISO 8601 with milliseconds
-		"2006-01-02T15:04:05Z",     // ISO 8601
-		"2006-01-02T15:04:05",      // ISO 8601 without Z
-		"2006-01-02",               // YYYY-MM-DD
-		"02.01.06",                 // DD.MM.YY
-		"02.01.2006",               // DD.MM.YYYY
-		"02/01/2006",               // DD/MM/YYYY
-		"01/02/2006",               // MM/DD/YYYY (US format)
-		"Jan 2, 2006",              // Month DD, YYYY
-		"January 2, 2006",          // Full month DD, YYYY
-		"2006-01-02 15:04:05",      // YYYY-MM-DD HH:MM:SS
-		"02.01.2006 15:04:05",     // DD.MM.YYYY HH:MM:SS
+		"2006-01-02T15:04:05.000Z", 
+		"2006-01-02T15:04:05Z",     
+		"2006-01-02T15:04:05",      
+		"2006-01-02",               
+		"02.01.06",                 
+		"02.01.2006",               
+		"02/01/2006",               
+		"01/02/2006",               
+		"Jan 2, 2006",              
+		"January 2, 2006",          
+		"2006-01-02 15:04:05",      
+		"02.01.2006 15:04:05",     
 	}
 
 	for _, format := range formats {
@@ -501,14 +500,14 @@ func (t *UnifiedTransformer) ParseDate(dateStr string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
-// FormatDate formats time.Time to string in API compatible format
+
 func (t *UnifiedTransformer) FormatDate(date time.Time) string {
 	return date.Format("2006-01-02T15:04:05Z")
 }
 
-// standardizeFieldName converts various field name formats to a standard format
+
 func standardizeFieldName(fieldName string) string {
-	// Common field name variations to standard form
+	
 	mappings := map[string]string{
 		"weekStart":    "week_start",
 		"weekEnd":      "week_end",

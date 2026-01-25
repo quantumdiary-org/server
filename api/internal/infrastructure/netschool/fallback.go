@@ -9,13 +9,13 @@ import (
 	"netschool-proxy/api/api/internal/domain/cache"
 )
 
-// FallbackService provides fallback mechanisms when NetSchool API is unavailable
+
 type FallbackService struct {
 	cache cache.CacheStrategy
 	client *Client
 }
 
-// NewFallbackService creates a new fallback service
+
 func NewFallbackService(cache cache.CacheStrategy, client *Client) *FallbackService {
 	return &FallbackService{
 		cache:  cache,
@@ -23,13 +23,13 @@ func NewFallbackService(cache cache.CacheStrategy, client *Client) *FallbackServ
 	}
 }
 
-// GetDataWithFallback attempts to get data from NetSchool API, falling back to cache if unavailable
+
 func (f *FallbackService) GetDataWithFallback(ctx context.Context, userID string, dataType string, fetchFunc func() (interface{}, error)) (interface{}, error) {
-	// First, try to get fresh data from NetSchool API
+	
 	data, err := fetchFunc()
 	if err == nil {
-		// If successful, cache the data for future fallbacks
-		cacheKey := fmt.Sprintf("fallback:%s:%s:%d", userID, dataType, time.Now().Unix()/3600) // hourly cache
+		
+		cacheKey := fmt.Sprintf("fallback:%s:%s:%d", userID, dataType, time.Now().Unix()/3600) 
 		go func() {
 			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -38,8 +38,8 @@ func (f *FallbackService) GetDataWithFallback(ctx context.Context, userID string
 		return data, nil
 	}
 
-	// If NetSchool API is unavailable, try to get data from cache
-	// Look for the most recent cached data for this user and data type
+	
+	
 	cachedData, err := f.getLatestCachedData(ctx, userID, dataType)
 	if err != nil {
 		return nil, fmt.Errorf("netSchool API unavailable and no cached data available: %w", err)
@@ -48,10 +48,10 @@ func (f *FallbackService) GetDataWithFallback(ctx context.Context, userID string
 	return cachedData, nil
 }
 
-// getLatestCachedData finds the most recent cached data for a user and data type
+
 func (f *FallbackService) getLatestCachedData(ctx context.Context, userID, dataType string) (interface{}, error) {
-	// Try different time windows to find cached data
-	timeWindows := []int{1, 2, 6, 12, 24} // hours
+	
+	timeWindows := []int{1, 2, 6, 12, 24} 
 	
 	for _, hours := range timeWindows {
 		cacheKey := fmt.Sprintf("fallback:%s:%s:%d", userID, dataType, time.Now().Unix()/(int64(hours)*3600))
@@ -63,7 +63,7 @@ func (f *FallbackService) getLatestCachedData(ctx context.Context, userID, dataT
 		}
 	}
 	
-	// If no data found in time-based keys, try a generic fallback key
+	
 	genericKey := fmt.Sprintf("fallback:%s:%s:latest", userID, dataType)
 	var cachedData interface{}
 	found, err := f.cache.Get(ctx, genericKey, &cachedData)
@@ -74,12 +74,12 @@ func (f *FallbackService) getLatestCachedData(ctx context.Context, userID, dataT
 	return nil, errors.New("no cached data found")
 }
 
-// GetStudentInfoWithFallback gets student info with fallback to cache
+
 func (f *FallbackService) GetStudentInfoWithFallback(ctx context.Context, userID string) (interface{}, error) {
 	fetchFunc := func() (interface{}, error) {
-		// В реальной реализации здесь будет вызов к NetSchool API
-		// для получения информации о студенте
-		// Пока возвращаем заглушку
+		
+		
+		
 		return map[string]interface{}{
 			"id":         "student_123",
 			"first_name": "Иван",
@@ -94,12 +94,12 @@ func (f *FallbackService) GetStudentInfoWithFallback(ctx context.Context, userID
 	return f.GetDataWithFallback(ctx, userID, "student_info", fetchFunc)
 }
 
-// GetGradesWithFallback gets grades with fallback to cache
+
 func (f *FallbackService) GetGradesWithFallback(ctx context.Context, userID, studentID string) (interface{}, error) {
 	fetchFunc := func() (interface{}, error) {
-		// В реальной реализации здесь будет вызов к NetSchool API
-		// для получения оценок студента
-		// Пока возвращаем заглушку
+		
+		
+		
 		return []interface{}{
 			map[string]interface{}{
 				"id":          "grade_1",
@@ -117,12 +117,12 @@ func (f *FallbackService) GetGradesWithFallback(ctx context.Context, userID, stu
 	return f.GetDataWithFallback(ctx, userID, "grades", fetchFunc)
 }
 
-// GetScheduleWithFallback gets schedule with fallback to cache
+
 func (f *FallbackService) GetScheduleWithFallback(ctx context.Context, userID string, weekStart time.Time) (interface{}, error) {
 	fetchFunc := func() (interface{}, error) {
-		// В реальной реализации здесь будет вызов к NetSchool API
-		// для получения расписания
-		// Пока возвращаем заглушку
+		
+		
+		
 		return map[string]interface{}{
 			"week_start": weekStart,
 			"week_end":   weekStart.AddDate(0, 0, 6),

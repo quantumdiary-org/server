@@ -29,7 +29,7 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Проверяем формат заголовка Authorization
+		
 		authParts := strings.SplitN(authHeader, " ", 2)
 		if len(authParts) != 2 || authParts[0] != "Bearer" {
 			c.JSON(401, gin.H{"error": "Invalid authorization header format"})
@@ -39,7 +39,7 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 
 		tokenString := authParts[1]
 
-		// Валидируем токен
+		
 		claims, err := m.authService.ValidateToken(c.Request.Context(), tokenString)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid or expired token"})
@@ -47,7 +47,7 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Получаем сессию отдельно для дальнейшего использования
+		
 		session, err := m.authService.GetSessionByUserID(c.Request.Context(), claims.UserID)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Session not found"})
@@ -55,11 +55,11 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Добавляем информацию о пользователе в контекст
+		
 		c.Set("userID", claims.UserID)
 		c.Set("sessionID", claims.SessionID)
 		c.Set("schoolID", claims.SchoolID)
-		c.Set("session", session) // Добавляем сессию в контекст для дальнейшего использования
+		c.Set("session", session) 
 
 		c.Next()
 	}

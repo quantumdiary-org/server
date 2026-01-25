@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewApp(t *testing.T) {
-	// Use test configuration
+	
 	cfg := &config.Config{
 		Server: config.ServerConfig{
 			Port: "8080",
@@ -23,18 +23,18 @@ func TestNewApp(t *testing.T) {
 		},
 		JWT: config.JWTConfig{
 			Secret:    "test_secret",
-			ExpiresIn: 24 * 60 * 60, // 24 hours
+			ExpiresIn: 24 * 60 * 60, 
 		},
 	}
 
-	// Note: This test will fail if database is not available
-	// For a complete test, we would need to mock the database
-	// This is just a basic test to check if the app can be created
+	
+	
+	
 	_, err := app.New(cfg)
 
-	// Since we don't have a real database connection in tests,
-	// we expect this to fail, but we can still test the creation logic
-	// For now, just check that the function doesn't panic
+	
+	
+	
 	assert.NotNil(t, cfg)
-	_ = err // avoid unused variable error
+	_ = err 
 }

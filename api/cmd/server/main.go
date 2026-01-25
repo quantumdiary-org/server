@@ -17,20 +17,20 @@ var (
 func main() {
 	flag.Parse()
 
-	// Load configuration
+	
 	cfg, err := config.LoadConfig(*configFile)
 	if err != nil {
 		fmt.Printf("Failed to load config: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Validate configuration
+	
 	if err := cfg.Validate(); err != nil {
 		fmt.Printf("Config validation error: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Create and start application
+	
 	appInstance, err := app.New(cfg)
 	if err != nil {
 		logger.Fatal("Failed to create application", "error", err)

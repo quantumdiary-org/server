@@ -15,18 +15,18 @@ type Logger struct {
 	logger zerolog.Logger
 }
 
-// New creates a new logger instance
+
 func New(logLevel string, logFile string) (*Logger, error) {
 	var writer io.Writer
 
-	// Parse log level
+	
 	level, err := zerolog.ParseLevel(logLevel)
 	if err != nil {
 		level = zerolog.InfoLevel
 	}
 
 	if logFile != "" {
-		// Create rotating log file writer
+		
 		rl, err := rotatelogs.New(
 			logFile+".%Y%m%d",
 			rotatelogs.WithLinkName(logFile),
@@ -49,7 +49,7 @@ func New(logLevel string, logFile string) (*Logger, error) {
 	return &Logger{logger: logger}, nil
 }
 
-// Init initializes the global logger
+
 func Init(logLevel string, logFile string) error {
 	logger, err := New(logLevel, logFile)
 	if err != nil {
@@ -60,7 +60,7 @@ func Init(logLevel string, logFile string) error {
 	return nil
 }
 
-// Info logs an info message
+
 func (l *Logger) Info(message string, fields ...interface{}) {
 	event := l.logger.Info()
 	for i := 0; i < len(fields); i += 2 {
@@ -74,7 +74,7 @@ func (l *Logger) Info(message string, fields ...interface{}) {
 	event.Msg(message)
 }
 
-// Error logs an error message
+
 func (l *Logger) Error(message string, fields ...interface{}) {
 	event := l.logger.Error()
 	for i := 0; i < len(fields); i += 2 {
@@ -88,7 +88,7 @@ func (l *Logger) Error(message string, fields ...interface{}) {
 	event.Msg(message)
 }
 
-// Debug logs a debug message
+
 func (l *Logger) Debug(message string, fields ...interface{}) {
 	event := l.logger.Debug()
 	for i := 0; i < len(fields); i += 2 {
@@ -102,7 +102,7 @@ func (l *Logger) Debug(message string, fields ...interface{}) {
 	event.Msg(message)
 }
 
-// Warn logs a warning message
+
 func (l *Logger) Warn(message string, fields ...interface{}) {
 	event := l.logger.Warn()
 	for i := 0; i < len(fields); i += 2 {
@@ -116,7 +116,7 @@ func (l *Logger) Warn(message string, fields ...interface{}) {
 	event.Msg(message)
 }
 
-// Fatal logs a fatal message and exits
+
 func (l *Logger) Fatal(message string, fields ...interface{}) {
 	event := l.logger.Fatal()
 	for i := 0; i < len(fields); i += 2 {
@@ -130,7 +130,7 @@ func (l *Logger) Fatal(message string, fields ...interface{}) {
 	event.Msg(message)
 }
 
-// With adds context fields to the logger
+
 func (l *Logger) With(fields ...interface{}) *Logger {
 	newLogger := l.logger.With()
 	for i := 0; i < len(fields); i += 2 {
@@ -144,7 +144,7 @@ func (l *Logger) With(fields ...interface{}) *Logger {
 	return &Logger{logger: newLogger.Logger()}
 }
 
-// Global convenience functions
+
 func Info(message string, fields ...interface{}) {
 	log.Info().Fields(getFieldMap(fields)).Msg(message)
 }

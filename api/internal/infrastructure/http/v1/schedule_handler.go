@@ -5,12 +5,20 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"netschool-proxy/api/api/internal/domain/schedule"
+	"netschool-proxy/api/api/internal/domain/student"
 )
 
-type ScheduleHandler struct{}
+type ScheduleHandler struct {
+	scheduleService *schedule.Service
+	studentService  *student.Service
+}
 
-func NewScheduleHandler() *ScheduleHandler {
-	return &ScheduleHandler{}
+func NewScheduleHandler(scheduleService *schedule.Service, studentService *student.Service) *ScheduleHandler {
+	return &ScheduleHandler{
+		scheduleService: scheduleService,
+		studentService:  studentService,
+	}
 }
 
 type Lesson struct {
@@ -36,18 +44,18 @@ type DaySchedule struct {
 	Lessons []Lesson `json:"lessons"`
 }
 
-// GetWeeklySchedule возвращает расписание на неделю
-// @Summary Get weekly schedule
-// @Description Retrieves the weekly schedule for a student
-// @Tags schedule
-// @Security BearerAuth
-// @Param week_start query string false "Start of week (YYYY-MM-DD format)" default(2023-09-01)
-// @Produce json
-// @Success 200 {object} WeeklySchedule
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /schedule/weekly [get]
+
+
+
+
+
+
+
+
+
+
+
+
 func (h *ScheduleHandler) GetWeeklySchedule(c *gin.Context) {
 	weekStartStr := c.Query("week_start")
 	var weekStart time.Time
@@ -60,91 +68,50 @@ func (h *ScheduleHandler) GetWeeklySchedule(c *gin.Context) {
 			return
 		}
 	} else {
-		// По умолчанию берем начало текущей недели
+		
 		now := time.Now()
-		weekStart = now.AddDate(0, 0, -int(now.Weekday())+1) // Понедельник недели
+		weekStart = now.AddDate(0, 0, -int(now.Weekday())+1) 
 	}
 
-	// Получаем userID из токена (через middleware)
-	_, exists := c.Get("userID")
+	
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// В реальной реализации здесь будет вызов к NetSchool API
-	// для получения расписания
-	// Пока возвращаем заглушку
-	weekEnd := weekStart.AddDate(0, 0, 6) // Конец недели (воскресенье)
-
-	mondayLessons := []Lesson{
-		{
-			ID:      "lesson_1",
-			Number:  1,
-			Subject: "Математика",
-			Teacher: "Иванова А.А.",
-			Room:    "301",
-			Start:   time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 8, 30, 0, 0, time.UTC),
-			End:     time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 9, 15, 0, 0, time.UTC),
-			Date:    weekStart,
-		},
-		{
-			ID:      "lesson_2",
-			Number:  2,
-			Subject: "Русский язык",
-			Teacher: "Петрова Б.Б.",
-			Room:    "302",
-			Start:   time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 9, 30, 0, 0, time.UTC),
-			End:     time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day(), 10, 15, 0, 0, time.UTC),
-			Date:    weekStart,
-		},
+	instanceURL := c.Query("instance_url")
+	if instanceURL == "" {
+		instanceURL = c.GetHeader("X-Instance-URL")
+		if instanceURL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "instance_url is required"})
+			return
+		}
 	}
 
-	tuesdayLessons := []Lesson{
-		{
-			ID:      "lesson_3",
-			Number:  1,
-			Subject: "Физика",
-			Teacher: "Сидоров В.В.",
-			Room:    "401",
-			Start:   time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day()+1, 8, 30, 0, 0, time.UTC),
-			End:     time.Date(weekStart.Year(), weekStart.Month(), weekStart.Day()+1, 9, 15, 0, 0, time.UTC),
-			Date:    weekStart.AddDate(0, 0, 1),
-		},
+	
+	scheduleData, err := h.scheduleService.GetWeeklySchedule(c.Request.Context(), userID.(string), instanceURL, weekStart)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	days := []DaySchedule{
-		{Date: weekStart, Lessons: mondayLessons},
-		{Date: weekStart.AddDate(0, 0, 1), Lessons: tuesdayLessons},
-		// Добавим остальные дни недели с пустыми расписаниями
-		{Date: weekStart.AddDate(0, 0, 2), Lessons: []Lesson{}},
-		{Date: weekStart.AddDate(0, 0, 3), Lessons: []Lesson{}},
-		{Date: weekStart.AddDate(0, 0, 4), Lessons: []Lesson{}},
-		{Date: weekStart.AddDate(0, 0, 5), Lessons: []Lesson{}},
-		{Date: weekStart.AddDate(0, 0, 6), Lessons: []Lesson{}},
-	}
-
-	schedule := WeeklySchedule{
-		WeekStart: weekStart,
-		WeekEnd:   weekEnd,
-		Days:      days,
-	}
-
-	c.JSON(http.StatusOK, schedule)
+	
+	c.JSON(http.StatusOK, scheduleData)
 }
 
-// GetDailySchedule возвращает расписание на день
-// @Summary Get daily schedule
-// @Description Retrieves the daily schedule for a student
-// @Tags schedule
-// @Security BearerAuth
-// @Param date query string false "Date (YYYY-MM-DD format)" default(2023-09-01)
-// @Produce json
-// @Success 200 {object} DaySchedule
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /schedule/daily [get]
+
+
+
+
+
+
+
+
+
+
+
+
 func (h *ScheduleHandler) GetDailySchedule(c *gin.Context) {
 	dateStr := c.Query("date")
 	var date time.Time
@@ -157,47 +124,33 @@ func (h *ScheduleHandler) GetDailySchedule(c *gin.Context) {
 			return
 		}
 	} else {
-		// По умолчанию берем сегодняшнюю дату
+		
 		date = time.Now()
 	}
 
-	// Получаем userID из токена (через middleware)
-	_, exists := c.Get("userID")
+	
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// В реальной реализации здесь будет вызов к NetSchool API
-	// для получения расписания на день
-	// Пока возвращаем заглушку
-	lessons := []Lesson{
-		{
-			ID:      "lesson_1",
-			Number:  1,
-			Subject: "Математика",
-			Teacher: "Иванова А.А.",
-			Room:    "301",
-			Start:   time.Date(date.Year(), date.Month(), date.Day(), 8, 30, 0, 0, time.UTC),
-			End:     time.Date(date.Year(), date.Month(), date.Day(), 9, 15, 0, 0, time.UTC),
-			Date:    date,
-		},
-		{
-			ID:      "lesson_2",
-			Number:  2,
-			Subject: "Русский язык",
-			Teacher: "Петрова Б.Б.",
-			Room:    "302",
-			Start:   time.Date(date.Year(), date.Month(), date.Day(), 9, 30, 0, 0, time.UTC),
-			End:     time.Date(date.Year(), date.Month(), date.Day(), 10, 15, 0, 0, time.UTC),
-			Date:    date,
-		},
+	instanceURL := c.Query("instance_url")
+	if instanceURL == "" {
+		instanceURL = c.GetHeader("X-Instance-URL")
+		if instanceURL == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "instance_url is required"})
+			return
+		}
 	}
 
-	daySchedule := DaySchedule{
-		Date:    date,
-		Lessons: lessons,
+	
+	scheduleData, err := h.scheduleService.GetDailySchedule(c.Request.Context(), userID.(string), instanceURL, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	c.JSON(http.StatusOK, daySchedule)
+	
+	c.JSON(http.StatusOK, scheduleData)
 }

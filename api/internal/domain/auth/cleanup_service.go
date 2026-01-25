@@ -8,13 +8,13 @@ import (
 	"netschool-proxy/api/api/internal/pkg/logger"
 )
 
-// CleanupService manages automatic cleanup of expired sessions
+
 type CleanupService struct {
 	sessionRepo SessionRepository
 	interval    time.Duration
 }
 
-// NewCleanupService creates a new cleanup service
+
 func NewCleanupService(sessionRepo SessionRepository, interval time.Duration) *CleanupService {
 	return &CleanupService{
 		sessionRepo: sessionRepo,
@@ -22,12 +22,12 @@ func NewCleanupService(sessionRepo SessionRepository, interval time.Duration) *C
 	}
 }
 
-// StartCleanup starts the periodic cleanup process
+
 func (cs *CleanupService) StartCleanup(ctx context.Context) {
 	ticker := time.NewTicker(cs.interval)
 	defer ticker.Stop()
 
-	// Perform initial cleanup
+	
 	cs.cleanupExpiredSessions()
 
 	for {
@@ -41,7 +41,7 @@ func (cs *CleanupService) StartCleanup(ctx context.Context) {
 	}
 }
 
-// cleanupExpiredSessions removes all expired sessions from the database
+
 func (cs *CleanupService) cleanupExpiredSessions() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -53,7 +53,7 @@ func (cs *CleanupService) cleanupExpiredSessions() {
 	}
 }
 
-// ManualCleanup performs a one-time cleanup of expired sessions
+
 func (cs *CleanupService) ManualCleanup() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -61,10 +61,10 @@ func (cs *CleanupService) ManualCleanup() error {
 	return cs.sessionRepo.CleanupExpired(ctx)
 }
 
-// GetCleanupStats returns statistics about cleanup operations
+
 func (cs *CleanupService) GetCleanupStats() map[string]interface{} {
-	// В реальной реализации здесь будет логика получения статистики
-	// о количестве удаленных сессий и т.д.
+	
+	
 	return map[string]interface{}{
 		"cleanup_interval": cs.interval.String(),
 		"last_run":        time.Now(),

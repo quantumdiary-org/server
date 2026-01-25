@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-// Validate validates the configuration
+
 func (cfg *Config) Validate() error {
 	var errs []string
 
-	// Validate server config
+	
 	if cfg.Server.Port == "" {
 		errs = append(errs, "server.port is required")
 	}
 
-	// Validate database config
+	
 	if cfg.Database.URL == "" {
 		if cfg.Database.Host == "" {
 			errs = append(errs, "database.host is required")
@@ -31,9 +31,9 @@ func (cfg *Config) Validate() error {
 		}
 	}
 
-	// Validate NetSchool config - no required fields since instance URL is passed dynamically
+	
 
-	// Validate JWT config
+	
 	if cfg.JWT.Secret == "" || cfg.JWT.Secret == "default_secret_key_change_me" {
 		errs = append(errs, "jwt.secret is required and should not be default value")
 	}
@@ -45,13 +45,13 @@ func (cfg *Config) Validate() error {
 	return nil
 }
 
-// GetDatabaseURL returns the database connection URL
+
 func (cfg *Config) GetDatabaseURL() string {
 	if cfg.Database.URL != "" {
 		return cfg.Database.URL
 	}
 
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.Database.User,
 		cfg.Database.Password,
 		cfg.Database.Host,
